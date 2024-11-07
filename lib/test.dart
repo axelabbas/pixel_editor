@@ -6,7 +6,7 @@ class PixelArtEditor extends StatefulWidget {
 }
 
 class _PixelArtEditorState extends State<PixelArtEditor> {
-  final int gridSize = 16;
+  final int gridSize = 64;
   Color selectedColor = Colors.black;
   late List<List<Color>>
       pixelColors; // 2D list of pixels, each value is the color of that pixel.
@@ -16,6 +16,7 @@ class _PixelArtEditorState extends State<PixelArtEditor> {
   @override
   void initState() {
     super.initState();
+
     pixelColors = List.generate(
         gridSize,
         (_) => List.generate(
@@ -50,62 +51,70 @@ class _PixelArtEditorState extends State<PixelArtEditor> {
       ),
       body: Column(
         children: [
+          // Text(_transformationController.value.toString()),
           buildColorPalette(),
           Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final pixelSize = constraints.maxWidth / gridSize;
+            child: AspectRatio(
+              aspectRatio: 1,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final pixelSize = constraints.maxWidth / gridSize;
 
-                return InteractiveViewer(
-                  transformationController: _transformationController,
-                  panEnabled: false, // Set it to false to prevent panning.
-                  boundaryMargin: EdgeInsets.all(5),
-                  minScale: 0.1,
-                  maxScale: 4,
-                  child: GridView.builder(
-                    physics: NeverScrollableScrollPhysics(),
-                    itemCount: gridSize * gridSize,
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: gridSize,
-                    ),
-                    itemBuilder: (context, index) {
-                      int row = index ~/ gridSize;
-                      int col = index % gridSize;
-
-                      return Listener(
-                        onPointerDown: (event) => {
-                          if (event.buttons == 1)
-                            {onColorChange(row, col)}
-                          else if (event.buttons == 2)
-                            {removeColor(row, col)}
-                        },
-                        onPointerMove: (event) {
-                          // Adjust the pixel size based on the scale
-                          // Calculate the row and col movement
-                          int calculatedRow =
-                              (event.localPosition.dy / pixelSize).floor();
-                          int calculatedCol =
-                              (event.localPosition.dx / pixelSize).floor();
-                          print("Row: $calculatedRow, Col: $calculatedCol");
-                          if (event.buttons == 1) {
-                            onColorChange(
-                                calculatedRow + row, calculatedCol + col);
-                          } else if (event.buttons == 2) {
-                            removeColor(
-                                calculatedRow + row, calculatedCol + col);
-                          }
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey, width: 0.5),
-                            color: pixelColors[row][col],
-                          ),
-                        ),
-                      );
+                  return InteractiveViewer(
+                    onInteractionUpdate: (details) {
+                      setState(() {});
                     },
-                  ),
-                );
-              },
+                    transformationController: _transformationController,
+                    panEnabled: false, // Set it to false to prevent panning.
+                    boundaryMargin: EdgeInsets.all(80),
+                    minScale: 0.05,
+                    maxScale: 4,
+                    child: GridView.builder(
+                      physics: NeverScrollableScrollPhysics(),
+                      itemCount: gridSize * gridSize,
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: gridSize,
+                      ),
+                      itemBuilder: (context, index) {
+                        int row = index ~/ gridSize;
+                        int col = index % gridSize;
+
+                        return Listener(
+                          onPointerDown: (event) => {
+                            if (event.buttons == 1)
+                              {onColorChange(row, col)}
+                            else if (event.buttons == 2)
+                              {removeColor(row, col)}
+                          },
+                          onPointerMove: (event) {
+                            // Adjust the pixel size based on the scale
+                            // Calculate the row and col movement
+                            int calculatedRow =
+                                (event.localPosition.dy / pixelSize).floor();
+                            int calculatedCol =
+                                (event.localPosition.dx / pixelSize).floor();
+                            print("Row: $calculatedRow, Col: $calculatedCol");
+                            if (event.buttons == 1) {
+                              onColorChange(
+                                  calculatedRow + row, calculatedCol + col);
+                            } else if (event.buttons == 2) {
+                              removeColor(
+                                  calculatedRow + row, calculatedCol + col);
+                            }
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              border:
+                                  Border.all(color: Colors.grey, width: 0.5),
+                              color: pixelColors[row][col],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                },
+              ),
             ),
           ),
         ],
