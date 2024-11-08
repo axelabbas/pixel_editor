@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pixel_editor/test.dart';
+import 'package:pixel_editor/drawingScreen.dart';
 
 void main() {
   runApp(const MyApp());
