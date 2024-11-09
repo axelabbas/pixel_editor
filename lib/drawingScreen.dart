@@ -6,9 +6,10 @@ class PixelArtEditor extends StatefulWidget {
 }
 
 class _PixelArtEditorState extends State<PixelArtEditor> {
-  final int gridSize = 128;
+  final int gridSize = 225;
   Color selectedColor = Colors.black;
   late List<List<Color>> pixelColors;
+  int brushSize = 1;
 
   @override
   void initState() {
@@ -21,9 +22,7 @@ class _PixelArtEditorState extends State<PixelArtEditor> {
 
   void onColorChange(int row, int col) {
     if (row >= 0 && row < gridSize && col >= 0 && col < gridSize) {
-      setState(() {
-        pixelColors[row][col] = selectedColor;
-      });
+      pixelColors[row][col] = selectedColor;
     }
   }
 
@@ -33,17 +32,35 @@ class _PixelArtEditorState extends State<PixelArtEditor> {
       appBar: AppBar(title: Text("Pixel Art Editor")),
       body: Column(
         children: [
+          TextField(
+            controller: TextEditingController(text: brushSize.toString()),
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              labelText: "Brush Size",
+            ),
+            onChanged: (value) {
+              int? newSize = int.tryParse(value);
+              if (newSize != null && newSize > 0) {
+                setState(() => brushSize = newSize);
+              } else {
+                print("Invalid brush size");
+              }
+            },
+          ),
           buildColorPalette(),
           Expanded(
             child: InteractiveViewer(
               child: GestureDetector(
                 onPanUpdate: (details) {
                   _handleTouch(details.localPosition);
+                  setState(() {}); // Repaint to show updates immediately
                 },
                 onTapDown: (details) {
                   _handleTouch(details.localPosition);
+                  setState(() {}); // Repaint to show updates immediately
                 },
                 child: CustomPaint(
+                  size: MediaQuery.of(context).size,
                   painter: PixelGridPainter(pixelColors),
                   child: Container(),
                 ),
@@ -55,12 +72,16 @@ class _PixelArtEditorState extends State<PixelArtEditor> {
     );
   }
 
-  void _handleTouch(Offset position) {
+  void _handleTouch(Offset localPosition) {
     final pixelSize = MediaQuery.of(context).size.width / gridSize;
-    int row = (position.dy ~/ pixelSize).clamp(0, gridSize - 1);
-    int col = (position.dx ~/ pixelSize).clamp(0, gridSize - 1);
 
-    onColorChange(row, col);
+    for (int i = -(brushSize ~/ 2); i <= (brushSize ~/ 2); i++) {
+      for (int j = -(brushSize ~/ 2); j <= (brushSize ~/ 2); j++) {
+        int row = ((localPosition.dy ~/ pixelSize) + i).clamp(0, gridSize - 1);
+        int col = ((localPosition.dx ~/ pixelSize) + j).clamp(0, gridSize - 1);
+        onColorChange(row, col);
+      }
+    }
   }
 
   Widget buildColorPalette() {
@@ -85,22 +106,20 @@ class _PixelArtEditorState extends State<PixelArtEditor> {
 class PixelGridPainter extends CustomPainter {
   final List<List<Color>> pixelColors;
   final double borderWidth;
+
   PixelGridPainter(this.pixelColors, {this.borderWidth = 0.5});
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint();
     final pixelSize = size.width / pixelColors.length;
+
     for (int row = 0; row < pixelColors.length; row++) {
       for (int col = 0; col < pixelColors[row].length; col++) {
-        paint.color = Colors.grey; // Border color
+        // Draw the border
+        paint.color = Colors.grey;
         canvas.drawRect(
-          Rect.fromLTWH(
-            col * pixelSize,
-            row * pixelSize,
-            pixelSize,
-            pixelSize,
-          ),
+          Rect.fromLTWH(col * pixelSize, row * pixelSize, pixelSize, pixelSize),
           paint,
         );
 
@@ -108,10 +127,10 @@ class PixelGridPainter extends CustomPainter {
         paint.color = pixelColors[row][col];
         canvas.drawRect(
           Rect.fromLTWH(
-            col * pixelSize + borderWidth, // Shift inside border
-            row * pixelSize + borderWidth, // Shift inside border
-            pixelSize - 2 * borderWidth, // Reduce for border
-            pixelSize - 2 * borderWidth, // Reduce for border
+            col * pixelSize + borderWidth,
+            row * pixelSize + borderWidth,
+            pixelSize - 2 * borderWidth,
+            pixelSize - 2 * borderWidth,
           ),
           paint,
         );
